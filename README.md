@@ -67,6 +67,7 @@ npm run dev        # starts on http://localhost:3000  (proxies /api → :3001)
 ```
 
 Open `http://localhost:3000` in your browser.
+<img width="971" height="734" alt="image" src="https://github.com/user-attachments/assets/45c96c96-8baf-43ca-87aa-2b01a5f2fce1" />
 
 ---
 
