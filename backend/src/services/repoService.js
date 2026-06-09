@@ -12,12 +12,17 @@ const PROVIDER_VERSIONS = {
   alibaba: '1.0.2',
 };
 
-// In-memory cache keyed by provider
-const cache = {};
+// In-memory cache keyed by provider (null prototype so keys like
+// "constructor" can't resolve through the prototype chain)
+const cache = Object.create(null);
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     https.get(url, { timeout: 15000 }, (res) => {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        res.resume();
+        return reject(new Error(`Registry responded with HTTP ${res.statusCode}`));
+      }
       let raw = '';
       res.on('data', (c) => (raw += c));
       res.on('end', () => {
@@ -29,11 +34,13 @@ function fetchJson(url) {
 }
 
 async function getProviderData(provider) {
-  const key = provider.toLowerCase();
+  const key = String(provider).toLowerCase();
+  if (!Object.prototype.hasOwnProperty.call(PROVIDER_VERSIONS, key)) {
+    throw new Error(`Unknown provider: ${provider}`);
+  }
   if (cache[key]) return cache[key];
 
   const version = PROVIDER_VERSIONS[key];
-  if (!version) throw new Error(`Unknown provider: ${provider}`);
 
   console.log(`[registry] Fetching ${key} v${version} from Terraform Registry…`);
   const data = await fetchJson(`${REGISTRY_BASE}/${key}/${version}`);

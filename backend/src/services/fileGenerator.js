@@ -137,7 +137,13 @@ function formatValue(val, type) {
   if (type && type.startsWith('map')) {
     return val.startsWith('{') ? val : '{}';
   }
-  return `"${val.replace(/"/g, '\\"')}"`;
+  // Escape backslashes, quotes, and newlines so a value can't break out of
+  // the quoted HCL string (or inject extra lines into main.tf)
+  const escaped = val
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r?\n/g, '\\n');
+  return `"${escaped}"`;
 }
 
 function sanitizeId(name) {
