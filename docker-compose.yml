@@ -6,8 +6,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: chkp-iac-backend
-    ports:
-      - "3001:3001"
+    # Only reachable from the frontend via the internal network;
+    # not published to the host (nginx proxies /api/ to it)
+    expose:
+      - "3001"
     environment:
       - PORT=3001
       - NODE_ENV=production

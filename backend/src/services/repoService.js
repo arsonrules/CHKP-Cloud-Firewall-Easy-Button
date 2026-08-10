@@ -6,15 +6,17 @@ const REGISTRY_BASE = 'https://registry.terraform.io/v1/modules/CheckPointSW/clo
 const PROVIDERS = ['aws', 'azure', 'gcp', 'nutanix', 'vmware', 'alibaba'];
 
 // In-memory cache keyed by provider: { data, ts }
-const cache = {};
+// Null prototype so keys like "constructor" can't resolve through the chain
+const cache = Object.create(null);
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
+    // 30s: the AWS payload is ~2.5MB
     https.get(url, { timeout: 30000 }, (res) => {
-      if (res.statusCode !== 200) {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
         res.resume();
-        return reject(new Error(`Registry returned HTTP ${res.statusCode} for ${url}`));
+        return reject(new Error(`Registry responded with HTTP ${res.statusCode}`));
       }
       let raw = '';
       res.on('data', (c) => (raw += c));
@@ -29,7 +31,7 @@ function fetchJson(url) {
 }
 
 async function getProviderData(provider) {
-  const key = provider.toLowerCase();
+  const key = String(provider).toLowerCase();
   if (!PROVIDERS.includes(key)) throw new Error(`Unknown provider: ${provider}`);
 
   const hit = cache[key];
@@ -79,7 +81,7 @@ async function getSubmoduleInputs(provider, relativePath) {
 }
 
 async function getModuleSource(provider, relativePath) {
-  const key = provider.toLowerCase();
+  const key = String(provider).toLowerCase();
   const { version } = await getProviderData(key);
   return {
     source: `CheckPointSW/cloudguard-network-security/${key}//${relativePath}`,

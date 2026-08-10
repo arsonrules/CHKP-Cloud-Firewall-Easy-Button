@@ -69,6 +69,21 @@ npm run dev        # starts on http://localhost:3000  (proxies /api → :3001)
 Open `http://localhost:3000` in your browser.
 
 ---
+## Instruction
+Select Provider
+<img width="971" height="734" alt="image" src="https://github.com/user-attachments/assets/45c96c96-8baf-43ca-87aa-2b01a5f2fce1" />
+
+Choose submodule
+<img width="962" height="632" alt="截圖 2026-05-12 上午10 09 35" src="https://github.com/user-attachments/assets/55044c80-18ca-4d13-b932-ab819660f16d" />
+
+Filled up required metrics
+<img width="948" height="840" alt="截圖 2026-05-12 上午10 11 05" src="https://github.com/user-attachments/assets/5b69e513-09aa-447a-b6eb-64e5d79b177f" />
+
+Download the .zip file, extract it and initiate Terrafrom for the directory
+<img width="996" height="556" alt="截圖 2026-05-12 上午10 12 40" src="https://github.com/user-attachments/assets/21e9ff48-16fc-4fcd-9229-97a1aff70d4c" />
+
+
+---
 
 ## API Reference
 

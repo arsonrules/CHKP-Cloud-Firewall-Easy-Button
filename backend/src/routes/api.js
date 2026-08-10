@@ -13,6 +13,26 @@ const PROVIDERS = [
   { id: 'vmware',   name: 'VMware',  icon: 'vmware.png'   },
 ];
 
+const VALID_PROVIDERS = new Set(PROVIDERS.map((p) => p.id));
+
+// Registry submodule paths only contain these characters (e.g. "modules/gateway")
+const MODULE_PATH_RE = /^[A-Za-z0-9_./-]+$/;
+
+function isValidProvider(provider) {
+  return typeof provider === 'string' && VALID_PROVIDERS.has(provider.toLowerCase());
+}
+
+function isValidModulePath(modulePath) {
+  return typeof modulePath === 'string'
+    && MODULE_PATH_RE.test(modulePath)
+    && !modulePath.includes('..');
+}
+
+// Restrict to characters safe inside a quoted Content-Disposition filename
+function safeFilenamePart(s) {
+  return String(s).replace(/[^A-Za-z0-9._-]/g, '_');
+}
+
 router.get('/providers', (req, res) => {
   res.json(PROVIDERS);
 });
@@ -20,7 +40,9 @@ router.get('/providers', (req, res) => {
 // Fetches available submodules from the Terraform Registry (no git clone needed)
 router.post('/clone', async (req, res) => {
   const { provider } = req.body;
-  if (!provider) return res.status(400).json({ error: 'provider is required' });
+  if (!isValidProvider(provider)) {
+    return res.status(400).json({ error: 'a valid provider is required' });
+  }
 
   try {
     const modules = await repoService.getModules(provider);
@@ -33,8 +55,8 @@ router.post('/clone', async (req, res) => {
 
 router.get('/variables', async (req, res) => {
   const { provider, modulePath } = req.query;
-  if (!provider || !modulePath) {
-    return res.status(400).json({ error: 'provider and modulePath are required' });
+  if (!isValidProvider(provider) || !isValidModulePath(modulePath)) {
+    return res.status(400).json({ error: 'a valid provider and modulePath are required' });
   }
 
   try {
@@ -48,15 +70,18 @@ router.get('/variables', async (req, res) => {
 
 router.post('/generate', async (req, res) => {
   const { provider, modulePath, moduleName, values } = req.body;
-  if (!provider || !modulePath) {
-    return res.status(400).json({ error: 'provider and modulePath are required' });
+  if (!isValidProvider(provider) || !isValidModulePath(modulePath)) {
+    return res.status(400).json({ error: 'a valid provider and modulePath are required' });
+  }
+  if (values !== undefined && (typeof values !== 'object' || values === null || Array.isArray(values))) {
+    return res.status(400).json({ error: 'values must be an object' });
   }
 
   try {
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="terraform-${provider}-${moduleName || 'module'}.zip"`
+      `attachment; filename="terraform-${safeFilenamePart(provider)}-${safeFilenamePart(moduleName || 'module')}.zip"`
     );
     await fileGenerator.generate({ provider, modulePath, moduleName, values: values || {} }, res);
   } catch (err) {
