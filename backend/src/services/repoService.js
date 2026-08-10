@@ -2,42 +2,53 @@ const https = require('https');
 
 const REGISTRY_BASE = 'https://registry.terraform.io/v1/modules/CheckPointSW/cloudguard-network-security';
 
-// Latest versions sourced from registry.terraform.io
-const PROVIDER_VERSIONS = {
-  aws:     '1.0.11',
-  azure:   '1.2.5',
-  gcp:     '1.1.2',
-  nutanix: '1.0.3',
-  vmware:  '1.0.2',
-  alibaba: '1.0.2',
-};
+// Whitelist — also guards the provider value interpolated into the registry URL
+const PROVIDERS = ['aws', 'azure', 'gcp', 'nutanix', 'vmware', 'alibaba'];
 
-// In-memory cache keyed by provider
+// In-memory cache keyed by provider: { data, ts }
 const cache = {};
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, { timeout: 15000 }, (res) => {
+    https.get(url, { timeout: 30000 }, (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`Registry returned HTTP ${res.statusCode} for ${url}`));
+      }
       let raw = '';
       res.on('data', (c) => (raw += c));
       res.on('end', () => {
+        // registry.terraform.io truncates large chunked responses often enough to matter
+        if (!res.complete) return reject(new Error(`Truncated response from ${url}`));
         try { resolve(JSON.parse(raw)); }
         catch (e) { reject(new Error(`JSON parse error from ${url}: ${e.message}`)); }
       });
-    }).on('error', reject).on('timeout', () => reject(new Error('Registry request timed out')));
+    }).on('error', reject).on('timeout', function () { this.destroy(new Error('Registry request timed out')); });
   });
 }
 
 async function getProviderData(provider) {
   const key = provider.toLowerCase();
-  if (cache[key]) return cache[key];
+  if (!PROVIDERS.includes(key)) throw new Error(`Unknown provider: ${provider}`);
 
-  const version = PROVIDER_VERSIONS[key];
-  if (!version) throw new Error(`Unknown provider: ${provider}`);
+  const hit = cache[key];
+  if (hit && Date.now() - hit.ts < CACHE_TTL_MS) return hit.data;
 
-  console.log(`[registry] Fetching ${key} v${version} from Terraform Registry…`);
-  const data = await fetchJson(`${REGISTRY_BASE}/${key}/${version}`);
-  cache[key] = data;
+  console.log(`[registry] Fetching latest ${key} from Terraform Registry…`);
+  // No version in the path → registry returns the latest published version
+  let data;
+  try {
+    data = await fetchJson(`${REGISTRY_BASE}/${key}`);
+  } catch (e) {
+    if (hit) {
+      console.warn(`[registry] ${e.message} — serving stale ${key} v${hit.data.version}`);
+      return hit.data;
+    }
+    throw e;
+  }
+  cache[key] = { data, ts: Date.now() };
+  console.log(`[registry] ${key} → v${data.version} (${(data.submodules || []).length} submodules)`);
   return data;
 }
 
@@ -67,12 +78,13 @@ async function getSubmoduleInputs(provider, relativePath) {
   return submod.inputs || [];
 }
 
-function getModuleSource(provider, relativePath) {
+async function getModuleSource(provider, relativePath) {
   const key = provider.toLowerCase();
+  const { version } = await getProviderData(key);
   return {
     source: `CheckPointSW/cloudguard-network-security/${key}//${relativePath}`,
-    version: PROVIDER_VERSIONS[key],
+    version,
   };
 }
 
-module.exports = { getModules, getSubmoduleInputs, getModuleSource, PROVIDER_VERSIONS };
+module.exports = { getModules, getSubmoduleInputs, getModuleSource, PROVIDERS };

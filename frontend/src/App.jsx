@@ -83,14 +83,31 @@ export default function App() {
 
   return (
     <div className="app-wrapper">
-      <header className="app-header">
-        <h1>⚡ CHKP CloudGuard IaC Easy Button</h1>
-        <p>Generate Check Point CGNS Terraform configurations in minutes</p>
+      <header className="topbar">
+        <div className="brandmark" />
+        <div className="title">CloudGuard Network Security</div>
+        <div className="subtitle">Terraform IaC easy button</div>
+        <div className="spacer" />
+        <div className="stamp">registry.terraform.io / CheckPointSW</div>
       </header>
 
-      <ProgressBar current={step} />
+      <div className="band">
+        <span className="band-label">Selection</span>
+        <div className="band-items">
+          {provider ? <b>{provider.name}</b> : <em>No provider</em>}
+          <span className="sep">/</span>
+          {selectedModule ? <b>{selectedModule.name}</b> : <em>No module</em>}
+          <span className="sep">/</span>
+          {variables.length > 0
+            ? <b>{variables.length} variables</b>
+            : <em>No variables</em>}
+        </div>
+      </div>
 
-      <div className="card">
+      <main className="stage">
+        <ProgressBar current={step} />
+
+        <div className="panel">
         {step === 1 && (
           <ProviderSelect
             providers={providers}
@@ -136,10 +153,16 @@ export default function App() {
             onBack={() => { setStep(3); setError(null); }}
           />
         )}
-      </div>
+        </div>
+      </main>
 
-      <footer style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--muted)', fontSize: '0.7rem' }}>
-        Check Point Software Technologies — CloudGuard Network Security IaC Generator
+      <footer className="band foot">
+        <span className="band-label">Check Point Software</span>
+        <div className="band-items">
+          Module metadata and versions resolved live from the Terraform Registry
+          <span className="sep">/</span>
+          Generated configs pin the version current at download time
+        </div>
       </footer>
     </div>
   );

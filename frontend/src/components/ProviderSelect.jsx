@@ -1,34 +1,38 @@
+import Loading from './Loading';
+
 export default function ProviderSelect({ providers, selected, onSelect, onNext, loading }) {
   return (
     <div>
-      <h2 className="section-title">// Select Cloud Provider</h2>
+      <h2 className="section-title">
+        Select cloud provider
+        <span className="count">{providers.length} available</span>
+      </h2>
 
       {loading ? (
-        <>
-          <div className="spinner" />
-          <p className="loading-text">INITIALIZING...</p>
-        </>
+        <Loading>Loading providers</Loading>
       ) : (
         <div className="provider-grid">
           {providers.map((p) => (
-            <div
+            <button
               key={p.id}
-              className={`provider-card ${selected?.id === p.id ? 'selected' : ''}`}
+              type="button"
+              data-provider={p.id}
+              className={`card provider-card ${selected?.id === p.id ? 'selected' : ''}`}
+              aria-pressed={selected?.id === p.id}
               onClick={() => onSelect(p)}
             >
-              <img src={`/icons/${p.icon}`} alt={p.name} />
-              <span className="provider-name">{p.name}</span>
-            </div>
+              <img src={`/icons/${p.icon}`} alt="" />
+              <span className="meta">
+                <span className="kick">Provider</span>
+                <span className="pname">{p.name}</span>
+              </span>
+            </button>
           ))}
         </div>
       )}
 
-      <div className="nav-row" style={{ justifyContent: 'flex-end' }}>
-        <button
-          className="btn btn-primary"
-          disabled={!selected || loading}
-          onClick={onNext}
-        >
+      <div className="nav-row end">
+        <button className="btn btn-primary" disabled={!selected || loading} onClick={onNext}>
           Next →
         </button>
       </div>

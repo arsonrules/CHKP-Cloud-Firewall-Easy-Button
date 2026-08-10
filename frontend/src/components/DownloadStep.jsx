@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Loading from './Loading';
 import { generateZip } from '../api/client';
 
 export default function DownloadStep({ provider, module: mod, values, onBack }) {
@@ -57,23 +58,28 @@ export default function DownloadStep({ provider, module: mod, values, onBack }) 
 
   return (
     <div>
-      <h2 className="section-title">// Generate Terraform Files</h2>
+      <h2 className="section-title">
+        Generate terraform files
+        <span className="count">main.tf · versions.tf · README.md</span>
+      </h2>
 
       <div className="summary-chips">
-        {provider && <span className="chip">Provider: {provider.name}</span>}
-        {mod && <span className="chip">Module: {mod.name}</span>}
-        <span className="chip">Variables: {Object.keys(values).length} configured</span>
+        {provider && <span className="chip">Provider<b>{provider.name}</b></span>}
+        {mod && <span className="chip">Module<b>{mod.name}</b></span>}
+        <span className="chip">Variables<b>{Object.keys(values).length}</b></span>
       </div>
 
       {done && !errorLog && (
         <div className="download-step">
-          <div className="success-icon">⬇</div>
-          <p style={{ color: 'var(--green)', marginBottom: '1rem', fontFamily: 'Orbitron,sans-serif', fontSize: '0.9rem' }}>
-            TERRAFORM FILES DOWNLOADED
+          <div className="dl-h">Terraform files downloaded</div>
+          <p>
+            Unzip the archive, then run <code>terraform init &amp;&amp; terraform plan</code>
           </p>
-          <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginBottom: '1.5rem' }}>
-            Unzip the file, then run <code style={{ color: 'var(--cyan)' }}>terraform init &amp;&amp; terraform plan</code>
-          </p>
+          <div className="file-list">
+            <span>main.tf</span>
+            <span>versions.tf</span>
+            <span>README.md</span>
+          </div>
         </div>
       )}
 
@@ -89,22 +95,19 @@ export default function DownloadStep({ provider, module: mod, values, onBack }) 
       )}
 
       {loading ? (
-        <>
-          <div className="spinner" />
-          <p className="loading-text">GENERATING TERRAFORM FILES...</p>
-        </>
+        <Loading>Generating terraform files</Loading>
       ) : (
         <button
           className={`btn ${done ? 'btn-download' : 'btn-generate'}`}
           onClick={handleGenerate}
           disabled={loading}
         >
-          {done ? '⬇  Download Again' : '⚡  Generate & Download ZIP'}
+          {done ? 'Download again' : 'Generate & download ZIP'}
         </button>
       )}
 
-      <div className="nav-row" style={{ marginTop: '1.5rem' }}>
-        <button className="btn btn-secondary" onClick={onBack} disabled={loading}>← Back</button>
+      <div className="nav-row">
+        <button className="btn" onClick={onBack} disabled={loading}>← Back</button>
       </div>
     </div>
   );

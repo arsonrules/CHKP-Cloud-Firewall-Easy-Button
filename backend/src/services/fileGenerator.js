@@ -21,15 +21,15 @@ async function generate({ provider, modulePath, moduleName, values }, outputStre
     return;
   }
 
-  archive.append(buildMainTf(provider, modulePath, moduleName, variables, values), { name: 'main.tf' });
+  archive.append(await buildMainTf(provider, modulePath, moduleName, variables, values), { name: 'main.tf' });
   archive.append(buildVersionsTf(provider), { name: 'versions.tf' });
   archive.append(buildReadme(provider, moduleName), { name: 'README.md' });
 
   await archive.finalize();
 }
 
-function buildMainTf(provider, modulePath, moduleName, variables, values) {
-  const { source, version } = repoService.getModuleSource(provider, modulePath);
+async function buildMainTf(provider, modulePath, moduleName, variables, values) {
+  const { source, version } = await repoService.getModuleSource(provider, modulePath);
   const id = sanitizeId(moduleName || 'checkpoint_cgns');
 
   const lines = [

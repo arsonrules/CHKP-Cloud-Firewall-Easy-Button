@@ -85,16 +85,26 @@ All endpoints are mounted at `/api`.
 
 ## Module source versions
 
-Module metadata is pulled from the Terraform Registry. Pinned versions (update in `backend/src/services/repoService.js` → `PROVIDER_VERSIONS`):
+Module metadata **and version** are resolved live from the Terraform Registry — the backend always asks for the latest published release per provider and caches it for 1 hour. The generated `main.tf` pins whatever version was current at generation time, so downloaded configs stay reproducible.
 
-| Provider | Registry module | Version |
-|----------|----------------|---------|
-| AWS | `CheckPointSW/cloudguard-network-security/aws` | 1.0.11 |
-| Azure | `CheckPointSW/cloudguard-network-security/azure` | 1.2.5 |
-| GCP | `CheckPointSW/cloudguard-network-security/gcp` | 1.1.2 |
-| Nutanix | `CheckPointSW/cloudguard-network-security/nutanix` | 1.0.3 |
-| VMware | `CheckPointSW/cloudguard-network-security/vmware` | 1.0.2 |
-| Alibaba | `CheckPointSW/cloudguard-network-security/alibaba` | 1.0.2 |
+Versions as of 2026-08-10:
+
+| Provider | Registry module | Version | Modules |
+|----------|----------------|---------|---------|
+| AWS | `CheckPointSW/cloudguard-network-security/aws` | 1.1.0 | 41 |
+| Azure | `CheckPointSW/cloudguard-network-security/azure` | 1.2.6 | 6 |
+| GCP | `CheckPointSW/cloudguard-network-security/gcp` | 1.1.4 | 4 |
+| Nutanix | `CheckPointSW/cloudguard-network-security/nutanix` | 1.0.3 | 2 |
+| VMware | `CheckPointSW/cloudguard-network-security/vmware` | 1.0.2 | 2 |
+| Alibaba | `CheckPointSW/cloudguard-network-security/alibaba` | 1.1.0 | 4 |
+
+To pin a provider to a specific version instead, hardcode it in `getProviderData` (`backend/src/services/repoService.js`) by appending `/<version>` to the registry URL.
+
+Verify the registry wiring end to end:
+
+```bash
+cd backend && node test-registry.js
+```
 
 ---
 
@@ -125,6 +135,7 @@ terraform apply
 CHKP-Cloud-Firewall-Easy-Button/
 ├── backend/
 │   ├── server.js
+│   ├── test-registry.js           # Live smoke check against the registry
 │   ├── Dockerfile
 │   └── src/
 │       ├── routes/api.js

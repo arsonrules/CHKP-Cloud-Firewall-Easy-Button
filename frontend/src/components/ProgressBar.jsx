@@ -11,10 +11,8 @@ export default function ProgressBar({ current }) {
       {STEPS.map(({ n, label }) => {
         const state = current > n ? 'done' : current === n ? 'active' : '';
         return (
-          <div key={n} className={`progress-step ${state}`}>
-            <div className="step-circle">
-              {current > n ? '✓' : n}
-            </div>
+          <div key={n} className={`progress-step ${state}`} aria-current={current === n || undefined}>
+            <span className="step-n">{current > n ? '✓' : n}</span>
             <span className="step-label">{label}</span>
           </div>
         );
